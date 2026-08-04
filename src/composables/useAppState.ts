@@ -2,12 +2,16 @@ import { computed, nextTick, ref, watch } from 'vue'
 import type { GristRecord, Action } from '../types/document-schema'
 import { GristRecordSchema } from '../types/document-schema'
 import { grist } from '../utils/grist'
+import { decodeShareLink, encodeShareLink, hasShareLink } from '../utils/sharelink'
 
 // App state
 const record = ref<GristRecord | null>(null)
 const rawGristData = ref<unknown>(null)
 const error = ref<string | null>(null)
 const isLoading = ref(true)
+
+// True when rendering a self-contained share link (standalone, no Grist).
+const isShareView = ref(false)
 
 // Action state
 const isExecutingAction = ref(false)
@@ -111,10 +115,45 @@ export function useAppState() {
   // Module-scoped flag to prevent duplicate initialization
   let gristInitialized = false
 
+  /**
+   * Build a self-contained share link for the current document and copy it.
+   * Returns the URL so callers can surface it if the clipboard is unavailable.
+   */
+  const copyShareLink = async (): Promise<string | null> => {
+    if (!rawGristData.value) return null
+    const url = await encodeShareLink(rawGristData.value)
+    try {
+      await navigator.clipboard.writeText(url)
+    } catch {
+      // Clipboard can be blocked inside the Grist iframe; caller shows the URL.
+    }
+    return url
+  }
+
   // Initialize Grist integration (idempotent)
   const initializeGrist = async () => {
     if (gristInitialized) return
     gristInitialized = true
+
+    // Standalone share link: render straight from the URL fragment, never
+    // touching Grist. This is what recipients open.
+    if (hasShareLink()) {
+      isShareView.value = true
+      try {
+        const data = await decodeShareLink()
+        rawGristData.value = data
+        record.value = GristRecordSchema.parse(data)
+        error.value = null
+      } catch (err) {
+        console.error('Invalid share link:', err)
+        const detail = err instanceof Error ? err.message : String(err)
+        error.value = 'ลิงก์เอกสารไม่ถูกต้องหรือเสียหาย\n\n' + detail
+        record.value = null
+      } finally {
+        isLoading.value = false
+      }
+      return
+    }
 
     grist.ready({
       onEditOptions: scrollToSettings,
@@ -174,6 +213,10 @@ export function useAppState() {
     // Action state
     isExecutingAction,
     actionsData,
+
+    // Share link
+    isShareView,
+    copyShareLink,
 
     // Computed
     isCssChanged,

@@ -1,0 +1,18 @@
+# Static file server for the built widget.
+#
+# Cache policy matters here: Vite fingerprints everything under /assets/, but
+# index.html is a stable URL that points at those hashes. If a CDN or browser
+# caches index.html, a rebuild keeps serving the OLD bundle and share links
+# silently break. So: assets immutable forever, index.html never cached.
+:80 {
+	root * /srv
+	encode zstd gzip
+
+	@assets path /assets/*
+	header @assets Cache-Control "public, max-age=31536000, immutable"
+
+	@html path / /index.html
+	header @html Cache-Control "no-cache, must-revalidate"
+
+	file_server
+}

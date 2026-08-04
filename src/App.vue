@@ -25,10 +25,33 @@ const {
   isCssChanged,
   isExecutingAction,
   actionsData,
+  isShareView,
+  copyShareLink,
   saveCustomCss,
   initializeGrist,
   executeAction,
 } = useAppState()
+
+function handlePrint() {
+  window.print()
+}
+
+async function handleCopyShareLink() {
+  try {
+    const url = await copyShareLink()
+    if (!url) return
+    // Clipboard writes are often blocked inside the Grist iframe — fall back to
+    // showing the URL so it can still be copied by hand.
+    if (navigator.clipboard) {
+      alert('คัดลอกลิงก์เอกสารแล้ว\n\nเปิดดูได้เลย ไม่ต้องล็อกอิน')
+    } else {
+      prompt('คัดลอกลิงก์นี้:', url)
+    }
+  } catch (err) {
+    console.error('Failed to create share link:', err)
+    alert('สร้างลิงก์ไม่สำเร็จ')
+  }
+}
 
 function handleCopyJson() {
   if (rawGristData.value) {
@@ -68,13 +91,26 @@ onMounted(async () => {
 
     <div v-else-if="record" class="app__content" data-testid="app-content" role="main">
       <ActionButtons
+        v-if="!isShareView"
         :raw-grist-data="rawGristData"
         :disable-print="!!record.Record.Signed_Document_URL"
         :actions="actionsData?.actions ?? []"
         :is-executing="isExecutingAction"
         :on-execute-action="executeAction"
         :on-copy-json="handleCopyJson"
+        :on-copy-share-link="handleCopyShareLink"
       />
+      <div v-else class="action-buttons action-buttons--print-hidden">
+        <button
+          type="button"
+          class="action-buttons__button action-buttons__button--primary"
+          data-testid="print-button"
+          aria-label="พิมพ์เอกสาร"
+          @click="handlePrint"
+        >
+          🖨️ พิมพ์เอกสาร
+        </button>
+      </div>
       <div class="app__main-content">
         <template v-if="record.Record.Signed_Document_URL">
           <div
@@ -99,8 +135,9 @@ onMounted(async () => {
         </template>
       </div>
 
-      <!-- CSS Settings Section -->
+      <!-- CSS Settings Section (editor only, never on a shared link) -->
       <div
+        v-if="!isShareView"
         ref="settingsRef"
         class="app__settings"
         data-testid="settings-panel"

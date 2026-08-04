@@ -1,11 +1,17 @@
 <!doctype html>
-<html lang="">
+<html lang="th">
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" href="/favicon.ico" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>TypeScriptAccount</title>
-    <script src="https://docs.getgrist.com/grist-plugin-api.js"></script>
+    <title>เอกสาร</title>
+    <!--
+      Grist plugin API, served from our own Grist instance rather than
+      docs.getgrist.com so the widget carries no external runtime dependency.
+      Point VITE_GRIST_PLUGIN_API elsewhere at build time to override.
+      Shared links (#d=...) still render if this script never loads.
+    -->
+    <script src="%VITE_GRIST_PLUGIN_API%"></script>
   </head>
   <body>
     <div id="app"></div>

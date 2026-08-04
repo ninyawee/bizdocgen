@@ -1,0 +1,26 @@
+# Self-hosted bizdocgen widget, served beside Grist on the shared `proxy`
+# network and published at https://bizdoc.saa-coop.org.
+#
+# The image is a plain static file server: build the app first, then bring the
+# container up (it mounts ./dist read-only).
+#
+#   pnpm install && pnpm run build-only
+#   docker compose up -d
+#
+# After a rebuild the files are picked up immediately; no restart needed.
+services:
+  bizdoc:
+    image: caddy:2-alpine
+    container_name: bizdoc
+    environment:
+      - TZ=${TZ:-Asia/Bangkok}
+    volumes:
+      - ./dist:/srv:ro
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+    restart: unless-stopped
+    networks:
+      - proxy
+
+networks:
+  proxy:
+    external: true

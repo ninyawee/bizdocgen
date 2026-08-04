@@ -60,6 +60,16 @@
         <button
           type="button"
           class="action-buttons__dropdown-item"
+          data-testid="copy-share-link-button"
+          aria-label="คัดลอกลิงก์เอกสาร"
+          role="menuitem"
+          @click="handleCopyShareLink"
+        >
+          🔗 คัดลอกลิงก์เอกสาร
+        </button>
+        <button
+          type="button"
+          class="action-buttons__dropdown-item"
           data-testid="copy-json-button"
           aria-label="คัดลอกข้อมูล JSON"
           role="menuitem"
@@ -85,6 +95,7 @@ interface Props {
   isExecuting: boolean
   onExecuteAction?: (action: Action) => void
   onCopyJson?: () => void
+  onCopyShareLink?: () => void
 }
 
 const props = defineProps<Props>()
@@ -108,6 +119,11 @@ function handlePrint() {
 
 function handleCopyJson() {
   props.onCopyJson?.()
+  closeMenu()
+}
+
+function handleCopyShareLink() {
+  props.onCopyShareLink?.()
   closeMenu()
 }
 
