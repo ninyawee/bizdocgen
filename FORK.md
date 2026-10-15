@@ -33,13 +33,66 @@ Treat a share link like the PDF itself.
 
 Code: `src/utils/sharelink.ts`, wired up in `src/composables/useAppState.ts`.
 
-### 2. No external runtime dependency
+### 2. Redesigned ใบแจ้งหนี้ / ใบเสร็จรับเงิน
+
+Implemented from the "Invoice & Receipt redesign" design canvas. The document now
+owns its own token layer (`src/styles/document.css`, all `--bd-*`) — `variables.css`
+is left to the app chrome, which is screen-only and must not inherit print geometry.
+
+Six features were picked out of a PEAK feature comparison and built:
+
+| | Feature | Notes |
+|---|---|---|
+| ① | Receipt settlement block | The arithmetic: gross = net + WHT, with a computed ตรงกัน tick |
+| ② | `วันที่ครบกำหนด` | Derived from `Date + Credit_Term`; never stored |
+| ④ | `(ต้นฉบับ)` / `(สำเนา)` | Presentation only — `?copy=1`, no schema field |
+| ⑦ | Seller phone | `Providers.Phone` |
+| ⑧ | `เรียน` | `Documents.Attention` |
+| ⑨ | `ติดต่อกลับที่` | Reuses ⑦; toggled by `Documents.Show_Contact_Back` |
+
+Two structural changes matter more than the field list:
+
+- **One line item renders as a statement, not a table.** 19 of 22 issued documents
+  have exactly one item, and five column headings over a single row is the thing
+  that made these look like accounting software. The table returns at n ≥ 2, or
+  when the single item carries a markdown list.
+- **Item text is two-level.** The first line of `Description` is the item name;
+  everything after it is the description.
+
+Payment details and the PromptPay QR are suppressed on receipts **by document
+type**, not by data absence — a receipt row may still carry a `Payment_Method`
+reference, but there is nothing left to pay.
+
+Deliberately not adopted from PEAK: per-line VAT and discount columns, VAT-category
+subtotals, `(สำนักงานใหญ่)` tags, customer/product codes, PEAK's six-slot stamp grid,
+and its document-link QR. Most are VAT machinery, and Ben is not VAT-registered.
+
+**Not built: multi-page.** The design closes the question (continuation header,
+ยอดยกมา / ยอดยกไป carry rows, honest page counters), but that needs a DOM-measuring
+paginator. No issued document has ever overflowed A4 — the budget holds 3–4 plain
+items and the largest real document has 2. Native print rules (`table-header-group`,
+`break-inside: avoid`) carry the overflow case for now, and the footer says `1 / 1`
+because that is the only count it can honestly report.
+
+**Grist wiring still outstanding** — until it lands, ①⑦⑧⑨ only appear in the
+`redesign-*` dev scenarios:
+
+- `Providers.Phone` (Text), optionally `Providers.Role`
+- `Documents.Attention` (Text), `Documents.Show_Contact_Back` (Toggle)
+- `Documents.Receipt` → `Ref:Receipts`, which is where `PaidDate / Gross / WHT /
+  NetTransfer / Channel` already live
+- the `Documents.Record` trigger formula, mirrored in `src/types/document-schema-formula.py`
+
+Every new schema field is nullish and nothing was renamed, so share links issued
+before the redesign still decode against the new bundle.
+
+### 3. No external runtime dependency
 
 `index.html` loads the Grist plugin API from our own instance
 (`VITE_GRIST_PLUGIN_API` in `.env`) instead of `docs.getgrist.com`. Share links
 render even if that script never loads.
 
-### 3. Cache policy (`Caddyfile`)
+### 4. Cache policy (`Caddyfile`)
 
 Vite fingerprints `/assets/*`, but `index.html` is a stable URL pointing at those
 hashes. Cached `index.html` means a rebuild silently keeps serving the old bundle

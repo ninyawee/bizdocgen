@@ -20,8 +20,33 @@ export const ProviderSchema = z.object({
   Email: z.string().nullish(),
   Name: z.string(), // Brand name
   Personnel_Name: z.string().nullish(), // Optional, for signature (ลงชื่อ)
+  Phone: z.string().nullish(), // ⑦ — header, and the ⑨ contact-back block
+  Role: z.string().nullish(), // strapline under the provider name
+  // Handwritten signature drawn above the signature rule. A `data:` URI keeps
+  // share links self-contained and the image off any public URL; an http(s)
+  // URL also works but is then fetchable by anyone who has it.
+  Signature: z.string().nullish(),
   Tax_ID: z.string(),
 })
+
+/**
+ * ① Receipt settlement — how the gross was actually settled.
+ * Mirrors the Grist `Receipts` columns; the presentation labels
+ * (destination line, sub-caption) are derived in the view model, not stored.
+ */
+export const SettlementSchema = z
+  .object({
+    Account_Holder: z.string().nullish(),
+    Account_Number: z.string().nullish(),
+    Bank: z.string().nullish(),
+    Channel: z.string().nullish(), // โอนผ่านธนาคาร ≠ พร้อมเพย์ ≠ เงินสด
+    Gross: z.number(),
+    Net_Transfer: z.number(),
+    Paid_Date: z.string(),
+    PromptPay: z.string().nullish(),
+    WHT: z.number(),
+  })
+  .nullish()
 
 export const ItemSchema = z.object({
   Description: z.string(),
@@ -61,6 +86,7 @@ export const ActionsDataSchema = z.object({
 })
 
 export const RecordDataSchema = z.object({
+  Attention: z.string().nullish(), // ⑧ เรียน — the person at the client
   Client: ClientSchema,
   Credit_Term: z.string().nullish(),
   Date: z.string(), // ISO date string
@@ -71,6 +97,8 @@ export const RecordDataSchema = z.object({
   Provider: ProviderSchema,
   Reference: ReferenceSchema,
   Remarks: z.string().nullish(),
+  Settlement: SettlementSchema, // ① receipts only
+  Show_Contact_Back: z.boolean().nullish(), // ⑨ ติดต่อกลับที่
   Tax: z.number(),
   Signed_Document_URL: z.union([z.url(), z.literal('')]).nullish(),
   Actions_Data: ActionsDataSchema.optional(),
@@ -92,6 +120,7 @@ export const GristRecordSchema = z.object({
 
 // TypeScript types derived from Zod schemas
 export type PaymentMethod = z.infer<typeof PaymentMethodSchema>
+export type Settlement = NonNullable<z.infer<typeof SettlementSchema>>
 export type Client = z.infer<typeof ClientSchema>
 export type Provider = z.infer<typeof ProviderSchema> // includes Personnel_Name
 export type Item = z.infer<typeof ItemSchema>

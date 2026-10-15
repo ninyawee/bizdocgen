@@ -1,37 +1,42 @@
 <template>
-  <section v-if="paymentMethod" class="payment-info">
-    <h3 class="payment-info__title">ข้อมูลการชำระเงิน</h3>
-
-    <div class="payment-info__details">
-      <div v-if="paymentMethod.Bank" class="payment-info__row">
-        <span class="payment-info__label">ธนาคาร:</span>
-        <span class="payment-info__value">{{ paymentMethod.Bank }}</span>
-      </div>
-
-      <div v-if="paymentMethod.Branch" class="payment-info__row">
-        <span class="payment-info__label">สาขา:</span>
-        <span class="payment-info__value">{{ paymentMethod.Branch }}</span>
-      </div>
-
-      <div v-if="paymentMethod.Account_Number" class="payment-info__row">
-        <span class="payment-info__label">เลขที่บัญชี:</span>
-        <span class="payment-info__value">{{ paymentMethod.Account_Number }}</span>
-      </div>
-
-      <div v-if="paymentMethod.Account_Holder" class="payment-info__row">
-        <span class="payment-info__label">ชื่อบัญชี:</span>
-        <span class="payment-info__value">{{ paymentMethod.Account_Holder }}</span>
-      </div>
-
-      <div v-if="paymentMethod.PromptPay" class="payment-info__row">
-        <span class="payment-info__label">PromptPay:</span>
-        <span class="payment-info__value">{{ paymentMethod.PromptPay }}</span>
+  <div v-if="paymentMethod">
+    <div class="bd-sec">ชำระเงินได้ที่</div>
+    <div class="bd-pay-box">
+      <dl class="bd-pay-rows">
+        <template v-if="paymentMethod.Bank">
+          <dt>ธนาคาร</dt>
+          <dd>{{ paymentMethod.Bank }}</dd>
+        </template>
+        <template v-if="paymentMethod.Branch">
+          <dt>สาขา</dt>
+          <dd>{{ paymentMethod.Branch }}</dd>
+        </template>
+        <template v-if="paymentMethod.Account_Number">
+          <dt>เลขที่บัญชี</dt>
+          <dd class="bd-num">{{ paymentMethod.Account_Number }}</dd>
+        </template>
+        <template v-if="paymentMethod.Account_Holder">
+          <dt>ชื่อบัญชี</dt>
+          <dd>{{ paymentMethod.Account_Holder }}</dd>
+        </template>
+        <template v-if="paymentMethod.PromptPay">
+          <dt>พร้อมเพย์</dt>
+          <dd class="bd-num">{{ paymentMethod.PromptPay }}</dd>
+        </template>
+      </dl>
+      <!--
+        Both channels settle into the same account, but they are different
+        channels — and the receipt will name whichever the client actually used.
+      -->
+      <div v-if="paymentMethod.Bank && paymentMethod.PromptPay" class="bd-chan-note">
+        โอนผ่านธนาคารหรือพร้อมเพย์ — คนละช่องทาง เข้าบัญชีเดียวกัน
       </div>
     </div>
-  </section>
+  </div>
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue'
 import type { GristRecord } from '../types/document-schema'
 
 interface Props {
@@ -40,28 +45,5 @@ interface Props {
 
 const props = defineProps<Props>()
 
-const paymentMethod = props.record.Record.Payment_Method
+const paymentMethod = computed(() => props.record.Record.Payment_Method)
 </script>
-
-<style>
-.payment-info__details {
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-xs);
-}
-
-.payment-info__row {
-  display: flex;
-}
-
-.payment-info__label {
-  width: 2.5cm;
-  color: var(--text-secondary);
-  font-weight: var(--font-weight-medium);
-}
-
-.payment-info__value {
-  color: var(--text-primary);
-  flex: 1;
-}
-</style>

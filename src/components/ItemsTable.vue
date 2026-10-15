@@ -1,44 +1,52 @@
 <template>
-  <section class="items-section">
-    <table class="items-table">
-      <thead class="items-table__head">
-        <tr class="items-table__row">
-          <th class="items-table__header items-table__header--number">ลำดับ</th>
-          <th class="items-table__header items-table__header--description">รายการ</th>
-          <th class="items-table__header items-table__header--quantity">จำนวน</th>
-          <th class="items-table__header items-table__header--unit-price">ราคาต่อหน่วย</th>
-          <th class="items-table__header items-table__header--total">จำนวนเงิน</th>
-        </tr>
-      </thead>
-      <tbody class="items-table__body">
-        <tr v-for="(item, index) in viewModel.items" :key="item.id" class="items-table__row">
-          <td class="items-table__cell items-table__cell--number">{{ index + 1 }}</td>
-          <td class="items-table__cell items-table__cell--description">
-            <div
-              v-if="isMarkdown(item.description)"
-              class="items-table__description items-table__description--markdown"
-              v-html="renderMarkdown(item.description)"
-            />
-            <div v-else class="items-table__description">{{ item.description }}</div>
-          </td>
-          <td class="items-table__cell items-table__cell--quantity">{{ item.quantity }}</td>
-          <td class="items-table__cell items-table__cell--unit-price">
-            {{ formatCurrency(item.unitPrice) }}
-          </td>
-          <td class="items-table__cell items-table__cell--total">
-            {{ formatCurrency(item.total) }}
-          </td>
-        </tr>
-      </tbody>
-    </table>
+  <!--
+    The 19-of-22 case: one line item with no sub-list renders as a statement,
+    not a five-column table for a single row. The table returns the moment a
+    second item exists, or the single item carries bullets.
+  -->
+  <section v-if="viewModel.renderAsStatement" class="bd-single">
+    <div>
+      <div class="bd-single-name">{{ single.name }}</div>
+      <div v-if="single.detail" class="bd-item-desc" v-html="renderMarkdown(single.detail)" />
+    </div>
+    <div class="bd-single-amt bd-num">{{ formatNumber(single.total) }}</div>
+    <div class="bd-single-rate">
+      <span><span class="bd-k">จำนวน</span> {{ single.quantity }}</span>
+      <!-- the literal space matters: Vue condenses whitespace across newlines -->
+      <span><span class="bd-k">ราคาต่อหน่วย</span> <span class="bd-num">{{ formatNumber(single.unitPrice) }}</span></span>
+    </div>
   </section>
+
+  <table v-else class="bd-items">
+    <thead>
+      <tr>
+        <th class="bd-c-no">ลำดับ</th>
+        <th>รายการ</th>
+        <th class="bd-c-qty">จำนวน</th>
+        <th class="bd-c-unit">ราคาต่อหน่วย</th>
+        <th class="bd-c-amt">จำนวนเงิน</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr v-for="(item, index) in viewModel.items" :key="item.id">
+        <td class="bd-c-no">{{ index + 1 }}</td>
+        <td>
+          <div class="bd-item-name">{{ item.name }}</div>
+          <div v-if="item.detail" class="bd-item-desc" v-html="renderMarkdown(item.detail)" />
+        </td>
+        <td class="bd-c-qty bd-num">{{ item.quantity }}</td>
+        <td class="bd-c-unit bd-num">{{ formatNumber(item.unitPrice) }}</td>
+        <td class="bd-c-amt bd-num">{{ formatNumber(item.total) }}</td>
+      </tr>
+    </tbody>
+  </table>
 </template>
 
 <script setup lang="ts">
 import { computed } from 'vue'
 import type { GristRecord } from '../types/document-schema'
-import { formatCurrency } from '../utils/currency'
-import { isMarkdown, renderMarkdown } from '../utils/markdown'
+import { formatNumber } from '../utils/currency'
+import { renderMarkdown } from '../utils/markdown'
 import { getViewModel } from '../utils/view-model'
 
 interface Props {
@@ -47,91 +55,6 @@ interface Props {
 
 const props = defineProps<Props>()
 
-const viewModel = computed(() => {
-  return getViewModel(props.record)
-})
+const viewModel = computed(() => getViewModel(props.record))
+const single = computed(() => viewModel.value.items[0]!)
 </script>
-
-<style>
-.items-section {
-  margin-bottom: var(--spacing-sm);
-}
-
-.items-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: var(--font-size-base);
-}
-
-.items-table__header {
-  background-color: var(--bg-gray-50);
-  border: 1px solid var(--border-default);
-  padding: var(--table-cell-padding);
-  text-align: left;
-  font-weight: var(--font-weight-semibold);
-  color: var(--text-primary);
-  font-size: var(--font-size-base);
-}
-
-.items-table__cell {
-  border: 1px solid var(--border-default);
-  padding: var(--table-cell-padding);
-  color: var(--text-primary);
-  vertical-align: top;
-  font-size: var(--font-size-base);
-}
-
-.items-table__header--number,
-.items-table__cell--number {
-  width: 1cm;
-  text-align: center;
-}
-
-.items-table__header--description,
-.items-table__cell--description {
-  width: auto;
-}
-
-.items-table__header--quantity,
-.items-table__cell--quantity {
-  width: 1.5cm;
-  text-align: right;
-}
-
-.items-table__header--unit-price,
-.items-table__cell--unit-price {
-  width: 2cm;
-  text-align: right;
-}
-
-.items-table__header--total,
-.items-table__cell--total {
-  width: 2cm;
-  text-align: right;
-}
-
-/* Remove vertical margins from first and last elements */
-.items-table__description--markdown > *:first-child {
-  margin-top: 0 !important;
-}
-
-.items-table__description--markdown > *:last-child {
-  margin-bottom: 0 !important;
-}
-
-/* Table-specific overrides for tighter spacing in cells */
-.items-table__description--markdown p {
-  margin: 0 0 var(--spacing-xs) 0;
-}
-
-.items-table__description--markdown ul,
-.items-table__description--markdown ol {
-  margin: var(--spacing-xs) 0;
-  font-size: var(--font-size-sm);
-  padding-left: 3mm;
-}
-
-.items-table__description--markdown li {
-  line-height: var(--line-height-tight);
-}
-</style>

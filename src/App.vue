@@ -13,6 +13,8 @@ import '@fontsource/share-tech-mono/400.css'
 import './styles/global.css'
 import './styles/print.css'
 import './styles/variables.css'
+// The document's own token layer + stylesheet. Loaded last so --bd-* wins.
+import './styles/document.css'
 
 const {
   record,

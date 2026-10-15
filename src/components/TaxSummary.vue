@@ -1,36 +1,29 @@
 <template>
-  <section class="tax-summary">
-    <div class="tax-summary__table">
-      <div class="tax-summary__row">
-        <div class="tax-summary__label">ยอดรวม</div>
-        <div class="tax-summary__amount">{{ formatCurrency(subtotal) }}</div>
-      </div>
+  <section class="bd-summary">
+    <dl class="bd-sum-row">
+      <dt>ยอดรวม</dt>
+      <dd class="bd-num">{{ formatNumber(viewModel.subtotal) }}</dd>
+    </dl>
 
-      <div v-if="taxInfo.label" class="tax-summary__row">
-        <div class="tax-summary__label">{{ taxInfo.label }}</div>
-        <div
-          class="tax-summary__amount"
-          :class="{ 'tax-summary__amount--negative': taxInfo.percentage < 0 }"
-        >
-          {{ taxInfo.percentage < 0 ? '-' : '' }}{{ formatCurrency(Math.abs(taxInfo.amount)) }}
-        </div>
-      </div>
+    <dl v-if="tax.label" class="bd-sum-row" :class="{ 'bd-sum-row--wht': tax.percentage < 0 }">
+      <dt>{{ tax.label }}</dt>
+      <!-- U+2212 minus, not a hyphen — it aligns with tabular figures -->
+      <dd class="bd-num">{{ tax.percentage < 0 ? '−' : '' }}{{ formatNumber(Math.abs(tax.amount)) }}</dd>
+    </dl>
 
-      <div class="tax-summary__row tax-summary__row--total">
-        <div class="tax-summary__label">จำนวนเงินสุทธิ</div>
-        <div class="tax-summary__amount">
-          {{ formatCurrency(total) }}
-          <div class="tax-summary__baht-text">({{ formatBahtText(total) }})</div>
-        </div>
-      </div>
-    </div>
+    <dl class="bd-sum-total">
+      <dt>จำนวนเงินสุทธิ</dt>
+      <dd class="bd-num">{{ formatNumber(viewModel.total) }}</dd>
+    </dl>
+
+    <span class="bd-bahttext">({{ formatBahtText(viewModel.total) }})</span>
   </section>
 </template>
 
 <script setup lang="ts">
 import { computed } from 'vue'
 import type { GristRecord } from '../types/document-schema'
-import { formatBahtText, formatCurrency } from '../utils/currency'
+import { formatBahtText, formatNumber } from '../utils/currency'
 import { getViewModel } from '../utils/view-model'
 
 interface Props {
@@ -39,56 +32,6 @@ interface Props {
 
 const props = defineProps<Props>()
 
-const viewModel = computed(() => {
-  return getViewModel(props.record)
-})
-
-const subtotal = computed(() => viewModel.value.subtotal)
-const taxInfo = computed(() => viewModel.value.tax)
-const total = computed(() => viewModel.value.total)
+const viewModel = computed(() => getViewModel(props.record))
+const tax = computed(() => viewModel.value.tax)
 </script>
-
-<style>
-.tax-summary {
-  margin-bottom: var(--spacing-xl);
-  display: flex;
-  justify-content: flex-end;
-}
-
-.tax-summary__table {
-  width: 50%;
-}
-
-.tax-summary__row {
-  display: flex;
-  justify-content: space-between;
-  padding: var(--spacing-xs) var(--spacing-sm);
-  border-bottom: 1px solid var(--border-light);
-}
-
-.tax-summary__row--total {
-  border-bottom: 2px solid var(--border-dark);
-  font-weight: var(--font-weight-bold);
-}
-
-.tax-summary__label {
-  color: var(--text-primary);
-}
-
-.tax-summary__amount {
-  color: var(--text-primary);
-  font-weight: var(--font-weight-medium);
-  text-align: right;
-}
-
-.tax-summary__amount--negative {
-  color: var(--text-error);
-}
-
-.tax-summary__baht-text {
-  color: var(--text-primary);
-  font-size: var(--font-size-xs);
-  line-height: var(--line-height-base);
-  font-weight: normal;
-}
-</style>

@@ -1,6 +1,7 @@
 <template>
   <article
-    class="document"
+    v-if="record"
+    class="bd-page document"
     data-testid="document"
     role="document"
     :data-document-type="documentType?.toLowerCase()"
@@ -10,22 +11,32 @@
     :data-customer-name="customerName"
     :data-payment-method-name="paymentMethodName"
   >
-    <DocumentHeader v-if="record" :record="record" />
+    <DocumentHeader :record="record" />
+    <ClientInfo :record="record" />
 
-    <ClientInfo v-if="record" :record="record" />
+    <div class="bd-flow">
+      <ItemsTable :record="record" />
+      <TaxSummary :record="record" />
 
-    <ItemsTable v-if="record" :record="record" />
+      <!-- ① receipts only -->
+      <SettlementInfo v-if="settlement" :settlement="settlement" />
 
-    <TaxSummary v-if="record" :record="record" />
+      <RemarksSection :record="record" />
 
-    <RemarksSection v-if="record" :record="record" />
+      <!--
+        Payment details and the PromptPay QR are suppressed on receipts by
+        document type, not by data absence — a receipt row can still carry a
+        Payment_Method reference, but there is nothing left to pay.
+      -->
+      <section v-if="showPayment" class="bd-pay" :class="{ 'bd-pay--solo': !showQr }">
+        <PaymentInfo :record="record" />
+        <QRCodeSection v-if="showQr" :record="record" />
+      </section>
 
-    <div v-if="record?.Record.Payment_Method" class="document__payment-section">
-      <PaymentInfo v-if="record" :record="record" />
-      <QRCodeSection v-if="record" :record="record" />
+      <SignatureArea :record="record" />
     </div>
 
-    <SignatureArea v-if="record" :record="record" />
+    <DocumentFooter :record="record" />
   </article>
 </template>
 
@@ -33,13 +44,16 @@
 import { computed } from 'vue'
 import type { GristRecord } from '../types/document-schema'
 import ClientInfo from './ClientInfo.vue'
+import DocumentFooter from './DocumentFooter.vue'
 import DocumentHeader from './DocumentHeader.vue'
 import ItemsTable from './ItemsTable.vue'
 import PaymentInfo from './PaymentInfo.vue'
 import QRCodeSection from './QRCodeSection.vue'
 import RemarksSection from './RemarksSection.vue'
+import SettlementInfo from './SettlementInfo.vue'
 import SignatureArea from './SignatureArea.vue'
 import TaxSummary from './TaxSummary.vue'
+import { getViewModel } from '../utils/view-model'
 
 interface Props {
   record: GristRecord | null
@@ -47,70 +61,21 @@ interface Props {
 
 const props = defineProps<Props>()
 
-const documentType = computed(() => {
-  return props.record?.Record.Document_Type[0] || null
-})
+const documentType = computed(() => props.record?.Record.Document_Type[0] || null)
+const providerName = computed(() => props.record?.Record.Provider.Name || null)
+const customerName = computed(() => props.record?.Record.Client.Name || null)
+const documentNumber = computed(() => props.record?.Record.Number || null)
+const paymentMethodName = computed(() => props.record?.Record.Payment_Method?.Name || null)
 
-const providerName = computed(() => {
-  return props.record?.Record.Provider.Name || null
-})
+const settlement = computed(() => (props.record ? getViewModel(props.record).settlement : null))
 
-const customerName = computed(() => {
-  return props.record?.Record.Client.Name || null
-})
+const isReceipt = computed(() => documentType.value === 'Receipt')
 
-const documentNumber = computed(() => {
-  return props.record?.Record.Number || null
-})
+const showPayment = computed(
+  () => !isReceipt.value && Boolean(props.record?.Record.Payment_Method),
+)
 
-const paymentMethodName = computed(() => {
-  return props.record?.Record.Payment_Method?.Name || null
-})
+const showQr = computed(
+  () => showPayment.value && Boolean(props.record?.Record.Payment_Method?.PromptPay),
+)
 </script>
-
-<style>
-.document {
-  padding: var(--document-padding-top) var(--document-padding-right) var(--document-padding-bottom)
-    var(--document-padding-left);
-  font-family: var(--font-family);
-  color: var(--text-primary);
-  font-size: var(--font-size-base);
-  line-height: var(--line-height-base);
-  box-sizing: border-box;
-  position: relative;
-}
-
-@media print {
-  .document {
-    zoom: 1 !important;
-    width: 100% !important;
-    min-height: auto !important;
-  }
-}
-
-@media screen {
-  .document {
-    margin-left: auto;
-    margin-right: auto;
-    width: var(--document-width);
-    min-height: var(--document-height);
-    background: var(--bg-white);
-    box-shadow: var(--document-shadow);
-    zoom: var(--document-scale);
-  }
-}
-
-.document__payment-section {
-  display: grid;
-  grid-template-columns: 1fr auto;
-  gap: var(--spacing-xl);
-  align-items: start;
-}
-
-@media print {
-  .document {
-    box-shadow: none;
-    min-height: auto;
-  }
-}
-</style>

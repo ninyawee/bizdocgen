@@ -14,7 +14,11 @@ export class PrintableDocumentTester extends PageObject {
 
   // Assertions
   async expectDocumentNumber(number: string) {
-    await expect(this.page.getByText(number)).toBeVisible()
+    // The redesign prints the number twice — the header meta spine and the page
+    // footer — so assert the stable attribute plus one visible rendering rather
+    // than a bare getByText, which now matches twice and trips strict mode.
+    await expect(this.document).toHaveAttribute('data-document-number', number)
+    await expect(this.page.getByText(number).first()).toBeVisible()
   }
 
   async expectClientName(name: string) {

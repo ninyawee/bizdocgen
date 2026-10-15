@@ -1,0 +1,778 @@
+/* ============================================================================
+   bizdoc — ใบแจ้งหนี้ / ใบเสร็จรับเงิน  document stylesheet
+   Print-first. A4 210×297mm. Type in pt, spacing in mm. White paper, mono-safe.
+   Palette taken from the Organic design system tokens (accent #c67139 terracotta,
+   accent-2 #7a8a5e sage), stepped darker where it carries paragraph-size text.
+
+   Ported from the "Invoice & Receipt redesign" design canvas. The document owns
+   its own --bd-* token layer rather than reusing variables.css: those tokens are
+   the app chrome (toolbar, settings panel, error states), which is screen-only
+   and must not inherit print geometry. @page lives in print.css.
+   ========================================================================= */
+
+:root {
+  /* type — pt only */
+  --bd-fs-xs: 7pt;      /* footer, baht text, satang            */
+  --bd-fs-sm: 8pt;      /* meta, item description, labels       */
+  --bd-fs-base: 9pt;    /* body, table figures                  */
+  --bd-fs-md: 10pt;     /* item name, summary total label       */
+  --bd-fs-lg: 12pt;     /* client name, due date value          */
+  --bd-fs-xl: 14pt;     /* provider name, net amount            */
+  --bd-fs-2xl: 20pt;    /* document type                        */
+  --bd-lh-tight: 1.3;   /* floor for Thai — below this, diacritics clip */
+  --bd-lh: 1.45;
+  --bd-lh-loose: 1.6;
+  --bd-w-normal: 400;
+  --bd-w-med: 500;
+  --bd-w-semi: 600;
+  --bd-w-bold: 700;
+
+  /* spacing — mm only */
+  --bd-s-xs: 1mm;
+  --bd-s-sm: 2mm;
+  --bd-s-md: 4mm;
+  --bd-s-lg: 6mm;
+  --bd-s-xl: 8mm;
+  --bd-s-2xl: 12mm;
+  --bd-s-3xl: 16mm;
+
+  /* ink */
+  --bd-ink: #201e1d;          /* body                              */
+  --bd-ink-soft: #474238;     /* secondary                         */
+  --bd-ink-muted: #645c50;    /* tertiary, footer                  */
+  --bd-label: #56633f;        /* sage-700 — every field label      */
+  --bd-accent-text: #8c491a;  /* accent-700 — accent at text size  */
+  --bd-accent: #c67139;       /* accent — rules and fills only     */
+  --bd-hair: #dcd3c4;         /* neutral-300 — row rules           */
+  --bd-hair-strong: #c0b6a5;  /* neutral-400                       */
+  --bd-wash: #fff2eb;         /* accent-100 — money blocks         */
+  --bd-wash-2: #f0fae1;       /* accent-2-100 — baht text, paid    */
+  --bd-paper: #fff;
+
+  /* geometry */
+  --bd-rule-hair: 0.25mm;
+  --bd-rule-mid: 0.5mm;
+  --bd-rule-accent: 0.8mm;
+  --bd-radius: 3mm;
+  --bd-radius-pill: 999px;
+
+  /* page */
+  --bd-page-w: 210mm;
+  --bd-page-h: 297mm;
+  --bd-inset-top: 20mm;
+  --bd-inset-x: 20mm;
+  --bd-inset-bottom: 12mm;
+  --bd-budget: 265mm;    /* 297 − 20 − 12 — the per-page content budget */
+  --bd-meta-w: 64mm;     /* right-hand meta spine   */
+  --bd-summary-w: 88mm;  /* summary block           */
+  --bd-qr: 25mm;
+}
+
+.bd-page {
+  width: var(--bd-page-w);
+  min-height: var(--bd-page-h);
+  box-sizing: border-box;
+  padding: var(--bd-inset-top) var(--bd-inset-x) var(--bd-inset-bottom);
+  background: var(--bd-paper);
+  color: var(--bd-ink);
+  font-family: 'Sarabun', 'Noto Sans Thai', sans-serif;
+  font-size: var(--bd-fs-base);
+  line-height: var(--bd-lh);
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  font-variant-numeric: tabular-nums;
+}
+.bd-page * {
+  box-sizing: border-box;
+}
+.bd-flow {
+  display: flex;
+  flex-direction: column;
+}
+
+/* — shared atoms ————————————————————————————————————————————— */
+.bd-sec {
+  font-size: 7.5pt;
+  font-weight: var(--bd-w-semi);
+  color: var(--bd-label);
+  line-height: var(--bd-lh-tight);
+  margin-bottom: var(--bd-s-sm);
+}
+.bd-k {
+  color: var(--bd-label);
+  font-weight: var(--bd-w-med);
+}
+.bd-num {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* — header ———————————————————————————————————————————————————— */
+.bd-head {
+  display: grid;
+  grid-template-columns: 1fr var(--bd-meta-w);
+  gap: var(--bd-s-xl);
+  align-items: start;
+}
+.bd-provider-name {
+  margin: 0;
+  font-size: var(--bd-fs-xl);
+  font-weight: var(--bd-w-bold);
+  line-height: var(--bd-lh-tight);
+  letter-spacing: -0.005em;
+}
+.bd-provider-role {
+  font-size: var(--bd-fs-sm);
+  color: var(--bd-ink-muted);
+  margin-top: 0.6mm;
+}
+.bd-provider-meta {
+  margin-top: 1.4mm;
+  font-size: var(--bd-fs-sm);
+  line-height: var(--bd-lh);
+  color: var(--bd-ink-soft);
+  display: flex;
+  flex-direction: column;
+  gap: 0.4mm;
+  max-width: 96mm;
+}
+.bd-provider-meta .bd-addr {
+  white-space: pre-line;
+}
+.bd-inline {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4mm var(--bd-s-md);
+}
+.bd-inline > span {
+  white-space: nowrap;
+}
+
+.bd-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1.6mm;
+}
+.bd-chip {
+  align-self: flex-end;
+  font-size: var(--bd-fs-xs);
+  line-height: 1;
+  color: var(--bd-ink-muted);
+  border: var(--bd-rule-hair) solid var(--bd-hair-strong);
+  border-radius: var(--bd-radius-pill);
+  padding: 1.1mm 2.6mm;
+  white-space: nowrap;
+}
+.bd-chip--copy {
+  color: var(--bd-accent-text);
+  border-color: var(--bd-accent);
+  background: var(--bd-wash);
+}
+.bd-doctype {
+  margin: 0;
+  font-size: var(--bd-fs-2xl);
+  font-weight: var(--bd-w-bold);
+  line-height: 1.25;
+  color: var(--bd-accent-text);
+  letter-spacing: -0.01em;
+}
+.bd-paid {
+  display: inline-block;
+  margin-top: var(--bd-s-xs);
+  font-size: var(--bd-fs-sm);
+  font-weight: var(--bd-w-semi);
+  color: #3d472b;
+  background: var(--bd-wash-2);
+  border-radius: var(--bd-radius-pill);
+  padding: 0.9mm 3mm;
+  line-height: 1.2;
+}
+.bd-metarows {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.8mm var(--bd-s-sm);
+  font-size: var(--bd-fs-sm);
+  line-height: var(--bd-lh-tight);
+  width: 100%;
+  margin: 0;
+}
+.bd-metarows dt {
+  color: var(--bd-label);
+  font-weight: var(--bd-w-med);
+}
+.bd-metarows dd {
+  margin: 0;
+  color: var(--bd-ink);
+  font-variant-numeric: tabular-nums;
+}
+.bd-due {
+  width: 100%;
+  background: var(--bd-wash);
+  border-radius: var(--bd-radius);
+  padding: 1.6mm 3mm;
+  margin-top: 0.4mm;
+}
+.bd-due-k {
+  font-size: 7.5pt;
+  color: var(--bd-label);
+  font-weight: var(--bd-w-med);
+  line-height: 1.3;
+}
+.bd-due-v {
+  font-size: var(--bd-fs-lg);
+  font-weight: var(--bd-w-bold);
+  color: var(--bd-accent-text);
+  line-height: 1.25;
+  font-variant-numeric: tabular-nums;
+}
+.bd-rule {
+  height: 0;
+  border-top: var(--bd-rule-accent) solid var(--bd-accent);
+  margin: 2.5mm 0 4mm;
+}
+
+/* — parties ————————————————————————————————————————————————— */
+.bd-parties {
+  display: grid;
+  grid-template-columns: 1fr var(--bd-meta-w);
+  gap: var(--bd-s-xl);
+  margin-bottom: 3mm;
+}
+.bd-parties--solo {
+  grid-template-columns: 1fr;
+}
+.bd-client-name {
+  font-size: var(--bd-fs-lg);
+  font-weight: var(--bd-w-semi);
+  line-height: var(--bd-lh-tight);
+}
+.bd-client-meta {
+  margin-top: var(--bd-s-xs);
+  font-size: var(--bd-fs-sm);
+  color: var(--bd-ink-soft);
+  line-height: var(--bd-lh);
+  max-width: 96mm;
+}
+.bd-client-meta .bd-addr {
+  white-space: pre-line;
+}
+.bd-attn {
+  margin-top: 1.4mm;
+  font-size: var(--bd-fs-base);
+  color: var(--bd-ink);
+}
+.bd-contact {
+  font-size: var(--bd-fs-sm);
+  line-height: var(--bd-lh);
+  color: var(--bd-ink-soft);
+}
+.bd-contact strong {
+  font-weight: var(--bd-w-semi);
+  color: var(--bd-ink);
+}
+
+/* — items ————————————————————————————————————————————————————— */
+.bd-items {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--bd-fs-base);
+}
+.bd-items th {
+  font-size: 7.5pt;
+  font-weight: var(--bd-w-semi);
+  color: var(--bd-label);
+  text-align: left;
+  padding: 0 var(--bd-s-sm) 1.6mm;
+  border-bottom: var(--bd-rule-mid) solid var(--bd-accent);
+  line-height: var(--bd-lh-tight);
+  white-space: nowrap;
+}
+.bd-items td {
+  padding: 2mm var(--bd-s-sm);
+  border-bottom: var(--bd-rule-hair) solid var(--bd-hair);
+  vertical-align: top;
+}
+.bd-items tbody tr:last-child td {
+  border-bottom: var(--bd-rule-mid) solid var(--bd-hair-strong);
+}
+.bd-items th:first-child,
+.bd-items td:first-child {
+  padding-left: 0;
+}
+.bd-items th:last-child,
+.bd-items td:last-child {
+  padding-right: 0;
+}
+.bd-c-no {
+  width: 8mm;
+  text-align: left;
+  color: var(--bd-ink-muted);
+}
+.bd-c-qty {
+  width: 14mm;
+  text-align: right;
+}
+.bd-c-unit {
+  width: 26mm;
+  text-align: right;
+}
+.bd-c-amt {
+  width: 30mm;
+  text-align: right;
+}
+th.bd-c-qty,
+th.bd-c-unit,
+th.bd-c-amt {
+  text-align: right;
+}
+.bd-item-name {
+  font-size: var(--bd-fs-md);
+  font-weight: var(--bd-w-semi);
+  line-height: var(--bd-lh-tight);
+}
+.bd-item-desc {
+  font-size: var(--bd-fs-sm);
+  color: var(--bd-ink-muted);
+  line-height: var(--bd-lh);
+  margin-top: 1mm;
+  max-width: 92mm;
+}
+.bd-item-desc p {
+  margin: 0 0 0.8mm;
+}
+.bd-item-desc p:last-child {
+  margin-bottom: 0;
+}
+.bd-item-desc ul,
+.bd-item-desc ol {
+  margin: 0.8mm 0 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6mm;
+}
+.bd-item-desc li {
+  padding-left: 3.4mm;
+  position: relative;
+}
+.bd-item-desc li::before {
+  content: '';
+  position: absolute;
+  left: 0.6mm;
+  top: 1.7mm;
+  width: 1.1mm;
+  height: 1.1mm;
+  border-radius: 50%;
+  background: var(--bd-accent);
+  opacity: 0.75;
+}
+.bd-item-desc strong {
+  font-weight: var(--bd-w-semi);
+  color: var(--bd-ink-soft);
+}
+
+/* single-item variant — the 19-of-22 case. Table head is dropped; the one line
+   becomes a statement. Set by the renderer, not by a media query. */
+.bd-single {
+  display: grid;
+  grid-template-columns: 1fr 30mm;
+  gap: var(--bd-s-md) var(--bd-s-sm);
+  align-items: end;
+  border-top: var(--bd-rule-mid) solid var(--bd-accent);
+  border-bottom: var(--bd-rule-mid) solid var(--bd-hair-strong);
+  padding: 3mm 0;
+}
+.bd-single-name {
+  font-size: var(--bd-fs-lg);
+  font-weight: var(--bd-w-semi);
+  line-height: var(--bd-lh-tight);
+}
+.bd-single-amt {
+  text-align: right;
+  font-size: var(--bd-fs-lg);
+  font-weight: var(--bd-w-semi);
+  align-self: start;
+}
+.bd-single-rate {
+  grid-column: 1/-1;
+  font-size: var(--bd-fs-sm);
+  color: var(--bd-ink-muted);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4mm var(--bd-s-md);
+}
+.bd-single-rate > span {
+  white-space: nowrap;
+}
+
+/* — summary ————————————————————————————————————————————————— */
+.bd-summary {
+  width: var(--bd-summary-w);
+  margin-left: auto;
+  margin-top: 3mm;
+}
+.bd-sum-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: var(--bd-s-md);
+  padding: 0.9mm 0;
+  font-size: var(--bd-fs-base);
+  line-height: var(--bd-lh-tight);
+  margin: 0;
+}
+.bd-sum-row dt {
+  color: var(--bd-ink-soft);
+}
+.bd-sum-row dd {
+  margin: 0;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.bd-sum-row--wht dd {
+  color: var(--bd-accent-text);
+}
+.bd-sum-total {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: var(--bd-s-md);
+  align-items: baseline;
+  padding: 2mm 0 0;
+  margin: 1.1mm 0 0;
+  border-top: var(--bd-rule-accent) solid var(--bd-accent);
+}
+.bd-sum-total dt {
+  font-size: var(--bd-fs-md);
+  font-weight: var(--bd-w-bold);
+}
+.bd-sum-total dd {
+  margin: 0;
+  font-size: var(--bd-fs-xl);
+  font-weight: var(--bd-w-bold);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.2;
+}
+.bd-bahttext {
+  display: block;
+  margin-top: 1.2mm;
+  background: var(--bd-wash-2);
+  border-radius: var(--bd-radius);
+  padding: 1mm 3mm;
+  font-size: var(--bd-fs-xs);
+  color: #3d472b;
+  text-align: right;
+  line-height: var(--bd-lh-tight);
+}
+
+/* — settlement (RECEIPT ONLY) ————————————————————————————— */
+.bd-settle {
+  margin-top: var(--bd-s-md);
+}
+.bd-settle-grid {
+  display: grid;
+  grid-template-columns: 1fr var(--bd-summary-w);
+  gap: var(--bd-s-xl);
+  align-items: start;
+}
+.bd-settle-meta {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 1mm var(--bd-s-md);
+  font-size: var(--bd-fs-sm);
+  line-height: var(--bd-lh-tight);
+  align-content: start;
+  margin: 0;
+}
+.bd-settle-meta dt {
+  color: var(--bd-label);
+  font-weight: var(--bd-w-med);
+  white-space: nowrap;
+}
+.bd-settle-meta dd {
+  margin: 0;
+  color: var(--bd-ink);
+}
+.bd-math {
+  background: var(--bd-wash);
+  border-radius: var(--bd-radius);
+  padding: 3mm var(--bd-s-md) 2.4mm;
+}
+.bd-math-row {
+  display: grid;
+  grid-template-columns: 3mm 1fr auto;
+  gap: var(--bd-s-sm);
+  align-items: baseline;
+  padding: 1.2mm 0;
+  font-size: var(--bd-fs-base);
+  line-height: var(--bd-lh-tight);
+}
+.bd-math-op {
+  color: var(--bd-accent);
+  font-weight: var(--bd-w-bold);
+  text-align: center;
+}
+.bd-math-k {
+  color: var(--bd-ink-soft);
+}
+.bd-math-k small {
+  display: block;
+  font-size: var(--bd-fs-xs);
+  color: var(--bd-ink-muted);
+  line-height: 1.35;
+}
+.bd-math-v {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  font-weight: var(--bd-w-med);
+}
+.bd-math-sep {
+  border-top: var(--bd-rule-hair) solid var(--bd-accent);
+  margin: 1.4mm 0 0.4mm;
+  grid-column: 1/-1;
+  height: 0;
+}
+.bd-math-row--gross {
+  padding-bottom: 2mm;
+}
+.bd-math-row--gross .bd-math-k {
+  color: var(--bd-label);
+  font-weight: var(--bd-w-med);
+}
+.bd-math-row--sum {
+  border-top: var(--bd-rule-accent) solid var(--bd-accent);
+  margin-top: 1.4mm;
+  padding-top: 2mm;
+}
+.bd-math-row--sum .bd-math-k {
+  font-weight: var(--bd-w-semi);
+  color: var(--bd-ink);
+}
+.bd-math-row--sum .bd-math-v {
+  font-weight: var(--bd-w-bold);
+  font-size: var(--bd-fs-md);
+}
+.bd-tick {
+  color: var(--bd-label);
+  font-size: var(--bd-fs-xs);
+  margin-left: 1.4mm;
+}
+/* the reconciliation failed — net + wht ≠ gross. Must be visible, not silent. */
+.bd-tick--off {
+  color: var(--bd-accent-text);
+  font-weight: var(--bd-w-semi);
+}
+
+/* — remarks ————————————————————————————————————————————————— */
+.bd-remarks {
+  margin-top: 3mm;
+  max-width: 118mm;
+  font-size: var(--bd-fs-sm);
+  line-height: var(--bd-lh);
+  color: var(--bd-ink-soft);
+}
+.bd-remarks p {
+  margin: 0 0 1.4mm;
+}
+.bd-remarks p:last-child {
+  margin-bottom: 0;
+}
+.bd-remarks ul,
+.bd-remarks ol {
+  margin: 1mm 0 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6mm;
+}
+.bd-remarks li {
+  padding-left: 3.4mm;
+  position: relative;
+}
+.bd-remarks li::before {
+  content: '';
+  position: absolute;
+  left: 0.6mm;
+  top: 1.7mm;
+  width: 1.1mm;
+  height: 1.1mm;
+  border-radius: 50%;
+  background: var(--bd-accent);
+  opacity: 0.75;
+}
+.bd-remarks blockquote {
+  margin: 1.4mm 0 0;
+  padding-left: 3mm;
+  border-left: var(--bd-rule-mid) solid var(--bd-hair-strong);
+  color: var(--bd-ink-muted);
+}
+
+/* — payment + QR ————————————————————————————————————————— */
+.bd-pay {
+  margin-top: 3mm;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: var(--bd-s-xl);
+  align-items: start;
+}
+.bd-pay--solo {
+  grid-template-columns: 1fr;
+}
+.bd-pay-box {
+  background: #faf7f2;
+  border-radius: var(--bd-radius);
+  padding: 2.5mm 3.5mm;
+  max-width: 104mm;
+}
+.bd-pay-rows {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 1mm var(--bd-s-md);
+  font-size: var(--bd-fs-sm);
+  line-height: var(--bd-lh-tight);
+  margin: 0;
+}
+.bd-pay-rows dt {
+  color: var(--bd-label);
+  font-weight: var(--bd-w-med);
+  white-space: nowrap;
+}
+.bd-pay-rows dd {
+  margin: 0;
+}
+.bd-chan-note {
+  margin-top: 2mm;
+  padding-top: 1.6mm;
+  border-top: var(--bd-rule-hair) solid var(--bd-hair);
+  font-size: var(--bd-fs-xs);
+  color: var(--bd-ink-muted);
+  line-height: var(--bd-lh-tight);
+}
+.bd-qr {
+  width: 46mm;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.4mm;
+}
+.bd-qr-img {
+  width: var(--bd-qr);
+  height: var(--bd-qr);
+  display: block;
+}
+.bd-qr-cap {
+  font-size: var(--bd-fs-xs);
+  color: var(--bd-ink-muted);
+  line-height: var(--bd-lh-tight);
+}
+.bd-qr-amt {
+  font-size: var(--bd-fs-sm);
+  font-weight: var(--bd-w-semi);
+  color: var(--bd-ink);
+}
+
+/* — signature ————————————————————————————————————————————— */
+.bd-sign {
+  margin-top: 3mm;
+  display: flex;
+  justify-content: flex-end;
+  break-inside: avoid;
+}
+.bd-sign-box {
+  width: 56mm;
+}
+.bd-sign-line {
+  height: 8mm;
+  border-bottom: var(--bd-rule-hair) solid var(--bd-ink-muted);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+/* Sits ON the rule, overlapping it slightly, the way a real signature does.
+   The fixed-height parent means a tall image overflows visually without
+   shifting the block. `multiply` lets a white-background scan drop onto the
+   paper; a transparent PNG needs no help and is preferable. */
+.bd-sign-img {
+  display: block;
+  max-height: 10mm;
+  max-width: 46mm;
+  object-fit: contain;
+  margin-bottom: -1mm;
+  mix-blend-mode: multiply;
+}
+.bd-sign-k {
+  font-size: var(--bd-fs-sm);
+  color: var(--bd-label);
+  font-weight: var(--bd-w-med);
+  margin-bottom: var(--bd-s-xs);
+}
+.bd-sign-name {
+  margin-top: 1.4mm;
+  font-size: var(--bd-fs-sm);
+  text-align: center;
+  color: var(--bd-ink);
+}
+.bd-sign-date {
+  font-size: var(--bd-fs-xs);
+  text-align: center;
+  color: var(--bd-ink-muted);
+  margin-top: 0.6mm;
+}
+/* quotation keeps upstream's two-box approve/issue pair — out of redesign scope */
+.bd-sign--pair {
+  justify-content: space-between;
+  gap: var(--bd-s-xl);
+}
+
+/* — footer ————————————————————————————————————————————————— */
+.bd-foot {
+  margin-top: auto;
+  padding-top: 2.5mm;
+  border-top: var(--bd-rule-hair) solid var(--bd-hair);
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: var(--bd-s-md);
+  font-size: var(--bd-fs-xs);
+  color: var(--bd-ink-muted);
+  line-height: var(--bd-lh-tight);
+}
+.bd-foot-r {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+/* — screen preview ————————————————————————————————————————— */
+@media screen {
+  .bd-page {
+    margin-left: auto;
+    margin-right: auto;
+    box-shadow: 0 2mm 6mm rgba(0, 0, 0, 0.1);
+    zoom: var(--document-scale);
+  }
+}
+
+/* — print ————————————————————————————————————————————————— */
+@media print {
+  .bd-page {
+    width: 100%;
+    min-height: auto;
+    box-shadow: none;
+    zoom: 1 !important;
+  }
+  .bd-sign,
+  .bd-settle,
+  .bd-summary,
+  .bd-single {
+    break-inside: avoid;
+  }
+  .bd-items thead {
+    display: table-header-group;
+  }
+  .bd-items tr {
+    break-inside: avoid;
+  }
+}

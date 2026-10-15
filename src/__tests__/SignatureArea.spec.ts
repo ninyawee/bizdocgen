@@ -4,7 +4,7 @@ import { mount } from '@vue/test-utils'
 import SignatureArea from '../components/SignatureArea.vue'
 import type { GristRecord } from '../types/document-schema'
 
-function createRecord(documentType: 'Quotation' | 'Invoice'): GristRecord {
+function createRecord(documentType: 'Quotation' | 'Invoice' | 'Receipt'): GristRecord {
   return {
     id: 1,
     Record: {
@@ -49,7 +49,7 @@ describe('SignatureArea', () => {
       props: { record: createRecord('Quotation') },
     })
 
-    const sections = wrapper.findAll('.signature__section')
+    const sections = wrapper.findAll('.bd-sign-box')
 
     expect(sections).toHaveLength(2)
     expect(sections[0]?.attributes('data-signature-type')).toBe('issuer')
@@ -61,8 +61,37 @@ describe('SignatureArea', () => {
       props: { record: createRecord('Invoice') },
     })
 
-    const section = wrapper.get('.signature__section--right')
+    const sections = wrapper.findAll('.bd-sign-box')
 
-    expect(section.attributes('data-signature-type')).toBe('issuer')
+    expect(sections).toHaveLength(1)
+    expect(sections[0]?.attributes('data-signature-type')).toBe('issuer')
+  })
+
+  it('draws the signature image only when the provider has one', () => {
+    const without = mount(SignatureArea, { props: { record: createRecord('Invoice') } })
+    expect(without.find('[data-testid="signature"]').exists()).toBe(false)
+
+    const record = createRecord('Invoice')
+    record.Record.Provider.Signature = 'data:image/png;base64,iVBORw0KGgo='
+    const withSig = mount(SignatureArea, { props: { record } })
+    expect(withSig.get('[data-testid="signature"]').attributes('src')).toBe(
+      'data:image/png;base64,iVBORw0KGgo=',
+    )
+  })
+
+  it('leaves the quotation approver box unsigned', () => {
+    const record = createRecord('Quotation')
+    record.Record.Provider.Signature = 'data:image/png;base64,iVBORw0KGgo='
+    const wrapper = mount(SignatureArea, { props: { record } })
+    // the issuer/approver pair is out of redesign scope and stays hand-signed
+    expect(wrapper.findAll('[data-testid="signature"]')).toHaveLength(0)
+  })
+
+  it('labels the signature by document type', () => {
+    const invoice = mount(SignatureArea, { props: { record: createRecord('Invoice') } })
+    const receipt = mount(SignatureArea, { props: { record: createRecord('Receipt') } })
+
+    expect(invoice.get('.bd-sign-k').text()).toBe('ลงชื่อผู้วางบิล')
+    expect(receipt.get('.bd-sign-k').text()).toBe('ผู้รับเงิน')
   })
 })

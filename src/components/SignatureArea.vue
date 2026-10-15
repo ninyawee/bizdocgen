@@ -1,32 +1,28 @@
 <template>
-  <footer class="signature">
-    <!-- Quotation: Two signature boxes -->
-    <div v-if="isQuotation" class="signature__grid">
-      <div class="signature__section" data-signature-type="issuer">
-        <div class="signature__text">เสนอราคาโดย</div>
-        <div class="signature__line"></div>
-        <div class="signature__name">{{ displayName }}</div>
-      </div>
-      <div class="signature__section" data-signature-type="approver">
-        <div class="signature__text">อนุมัติโดย</div>
-        <div class="signature__line"></div>
-        <div class="signature__name">
-          ...................................................................
-        </div>
-        <div class="signature__date">วันที่ ....../....../.........</div>
-      </div>
+  <!-- Quotation keeps upstream's two-box issue/approve pair — out of redesign scope -->
+  <footer v-if="isQuotation" class="bd-sign bd-sign--pair">
+    <div class="bd-sign-box" data-signature-type="issuer">
+      <div class="bd-sign-k">เสนอราคาโดย</div>
+      <div class="bd-sign-line"></div>
+      <div class="bd-sign-name">( {{ displayName }} )</div>
+      <div class="bd-sign-date">วันที่ {{ signDate }}</div>
     </div>
+    <div class="bd-sign-box" data-signature-type="approver">
+      <div class="bd-sign-k">อนุมัติโดย</div>
+      <div class="bd-sign-line"></div>
+      <div class="bd-sign-name">(&nbsp;)</div>
+      <div class="bd-sign-date">วันที่ ....../....../.........</div>
+    </div>
+  </footer>
 
-    <!-- Invoice & Receipt: Single signature on right -->
-    <div v-else class="signature__single">
-      <div
-        class="signature__section signature__section--right"
-        data-signature-type="issuer"
-      >
-        <div class="signature__text">ลงชื่อ</div>
-        <div class="signature__line"></div>
-        <div class="signature__name">{{ displayName }}</div>
+  <footer v-else class="bd-sign">
+    <div class="bd-sign-box" data-signature-type="issuer">
+      <div class="bd-sign-k">{{ signatureLabel }}</div>
+      <div class="bd-sign-line">
+        <img v-if="signature" :src="signature" alt="" class="bd-sign-img" data-testid="signature" />
       </div>
+      <div class="bd-sign-name">( {{ displayName }} )</div>
+      <div class="bd-sign-date">วันที่ {{ signDate }}</div>
     </div>
   </footer>
 </template>
@@ -34,6 +30,8 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import type { GristRecord } from '../types/document-schema'
+import { formatShortDate } from '../utils/document'
+import { getViewModel } from '../utils/view-model'
 
 interface Props {
   record: GristRecord
@@ -41,64 +39,25 @@ interface Props {
 
 const props = defineProps<Props>()
 
-const isQuotation = computed(() => {
-  return props.record.Record.Document_Type.includes('Quotation')
-})
+const viewModel = computed(() => getViewModel(props.record))
+
+const isQuotation = computed(() => props.record.Record.Document_Type.includes('Quotation'))
+
+const isReceipt = computed(() => props.record.Record.Document_Type.includes('Receipt'))
+
+const signatureLabel = computed(() => (isReceipt.value ? 'ผู้รับเงิน' : 'ลงชื่อผู้วางบิล'))
 
 const displayName = computed(() => {
   const p = props.record.Record.Provider
   return p.Personnel_Name ?? p.Name
 })
+
+// Only the issuer signs in advance; the quotation's approver box stays blank
+// for the client to sign by hand.
+const signature = computed(() => props.record.Record.Provider.Signature || null)
+
+// A receipt is signed on the day the money landed, not the day it was issued.
+const signDate = computed(() =>
+  formatShortDate(viewModel.value.settlement?.paidDate ?? props.record.Record.Date),
+)
 </script>
-
-<style>
-.signature {
-  margin-top: var(--spacing-lg);
-  page-break-inside: avoid;
-}
-
-/* Quotation: Two signature boxes */
-.signature__grid {
-  display: flex;
-  justify-content: space-between;
-}
-
-/* Invoice & Receipt: Single signature on right */
-.signature__single {
-  display: flex;
-  justify-content: flex-end;
-}
-
-.signature__section {
-  text-align: center;
-  width: 5cm;
-}
-
-.signature__text {
-  font-size: var(--font-size-base);
-  color: var(--text-primary);
-  margin-bottom: var(--spacing-sm);
-  text-align: left;
-}
-
-.signature__line {
-  height: var(--spacing-xl);
-  border-bottom: 1px solid var(--text-primary);
-  margin-bottom: var(--spacing-sm);
-}
-
-.signature__name {
-  font-size: var(--font-size-sm);
-  color: var(--text-primary);
-}
-
-.signature__blank-line {
-  height: var(--spacing-sm);
-}
-
-.signature__date {
-  font-size: var(--font-size-sm);
-  color: var(--text-secondary);
-  margin-top: var(--spacing-sm);
-}
-</style>

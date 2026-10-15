@@ -51,9 +51,9 @@ describe('sharelink', () => {
     const url = await encodeShareLink(sample, 'https://x/')
     const body = url.slice(url.indexOf('#d=') + 3)
     expect(['z', 'p']).toContain(body[0])
-    if (body[0] === 'z') {
-      expect(body.length).toBeLessThan(JSON.stringify(sample).length)
-    }
+    // Where the environment does compress, the payload must actually be smaller.
+    const compressed = body[0] === 'z'
+    expect(!compressed || body.length < JSON.stringify(sample).length).toBe(true)
     await expect(decodeShareLink(url.slice(url.indexOf('#')))).resolves.toEqual(sample)
   })
 
@@ -64,6 +64,6 @@ describe('sharelink', () => {
   })
 
   it('rejects a corrupted payload', async () => {
-    await expect(decodeShareLink('#d=qNOTVALID')).rejects.toThrow()
+    await expect(decodeShareLink('#d=qNOTVALID')).rejects.toThrow(Error)
   })
 })

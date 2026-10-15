@@ -6,7 +6,271 @@ import type { GristRecord } from '../types/document-schema'
 // - Day rate ≈ 8 hours = 48,000 THB
 // - Emergency/night surcharge ≈ +50%
 // - Small consumables priced locally
+// The redesign states, ported from the "Invoice & Receipt redesign" canvas.
+// These are the only way to see ①⑦⑧⑨ before the Grist columns are wired up.
+const redesignProvider = {
+  Address: '88/12 ซอยลาดพร้าว 71 แขวงสะพานสอง\nเขตวังทองหลาง กรุงเทพมหานคร 10310',
+  Email: 'life.particles@gmail.com',
+  Name: 'ณัฐชนน นินยวี',
+  Personnel_Name: 'นาย ณัฐชนน นินยวี',
+  Phone: '099 286 6936',
+  Role: 'วิศวกรซอฟต์แวร์อิสระ · Lead Engineer',
+  Tax_ID: '1419900489238',
+}
+
+const redesignClient = {
+  Address:
+    'เลขที่ 191 อาคารสีลมคอมเพล็กซ์ ชั้น 22 ห้อง 2204\nถนนสีลม แขวงสีลม เขตบางรัก กรุงเทพมหานคร 10500',
+  Name: 'บริษัท ไทยคลาวด์ เซอร์วิสเซส จำกัด',
+  Tax_ID: '0105561234567',
+}
+
+const redesignBank = {
+  Account_Holder: 'นาย ณัฐชนน นินยวี',
+  Account_Number: '219-8-64013-4',
+  Bank: 'ธนาคารกสิกรไทย',
+  Branch: 'ลาดพร้าว 71',
+  Name: 'KBank',
+  PromptPay: '0992866936',
+}
+
+const redesignItem = {
+  Description:
+    'พัฒนาระบบและให้คำปรึกษาด้านวิศวกรรมซอฟต์แวร์\nงวดที่ 3 — กรกฎาคม 2569 · 40 ชั่วโมง',
+  Manual_Sort: 1,
+  Quantity: 1,
+  Total: 204680,
+  Unit_Price: 204680,
+  id: 1,
+}
+
 export const scenarios: { title: string; slug: string; data: GristRecord }[] = [
+  {
+    title: 'ออกแบบใหม่ · ใบแจ้งหนี้ — ครบทุกช่อง (②④⑦⑧⑨)',
+    slug: 'redesign-invoice-full',
+    data: {
+      id: 901,
+      Record: {
+        Attention: 'คุณพิมพ์ชนก วัฒนสุข — ฝ่ายจัดซื้อ',
+        Client: redesignClient,
+        Credit_Term: '7 วัน',
+        Date: '2026-07-30T00:00:00.000Z',
+        Document_Type: ['Invoice'],
+        Items: [redesignItem],
+        Number: 'IV-20260700003',
+        Payment_Method: redesignBank,
+        Provider: redesignProvider,
+        Reference: { Number: 'PO-TC-2026-114' },
+        Remarks:
+          'กรุณาชำระภายในวันที่ครบกำหนด โดยโอนเข้าบัญชีตามรายละเอียดด้านล่าง หรือสแกนคิวอาร์พร้อมเพย์\n\nยอดที่แสดงเป็น**ยอดสุทธิหลังหักภาษี ณ ที่จ่าย 3% แล้ว** — กรุณาออกหนังสือรับรองการหักภาษี ณ ที่จ่าย ตามยอด ฿6,140.40',
+        Show_Contact_Back: true,
+        Tax: -0.03,
+      },
+    },
+  },
+  {
+    title: 'ออกแบบใหม่ · ใบแจ้งหนี้ — เคสปกติ (ช่องว่างทั้งหมดหาย)',
+    slug: 'redesign-invoice-bare',
+    data: {
+      id: 902,
+      Record: {
+        Client: redesignClient,
+        Credit_Term: null,
+        Date: '2026-07-30T00:00:00.000Z',
+        Document_Type: ['Invoice'],
+        Items: [redesignItem],
+        Number: 'IV-20260700004',
+        Payment_Method: redesignBank,
+        Provider: redesignProvider,
+        Reference: null,
+        Remarks: null,
+        Tax: -0.03,
+      },
+    },
+  },
+  {
+    title: 'ออกแบบใหม่ · ใบเสร็จรับเงิน — ① บล็อกกระทบยอด',
+    slug: 'redesign-receipt-full',
+    data: {
+      id: 903,
+      Record: {
+        Attention: 'คุณพิมพ์ชนก วัฒนสุข — ฝ่ายจัดซื้อ',
+        Client: redesignClient,
+        Credit_Term: null,
+        Date: '2026-07-31T00:00:00.000Z',
+        Document_Type: ['Receipt'],
+        Items: [redesignItem],
+        Number: 'RE-20260700003',
+        Payment_Method: null,
+        Provider: redesignProvider,
+        Reference: { Number: 'IV-20260700003' },
+        Remarks:
+          'ได้รับชำระเงินครบถ้วนแล้ว ขอบคุณที่ใช้บริการ\n\nกรุณาส่งหนังสือรับรองการหักภาษี ณ ที่จ่าย ตามยอด ฿6,140.40 มาที่อีเมลด้านบน',
+        Settlement: {
+          Account_Holder: 'นาย ณัฐชนน นินยวี',
+          Account_Number: 'ออมทรัพย์ 219-8-64013-4',
+          Bank: 'ธนาคารกสิกรไทย',
+          Channel: 'โอนผ่านธนาคาร',
+          Gross: 204680,
+          Net_Transfer: 198539.6,
+          Paid_Date: '2026-07-31T00:00:00.000Z',
+          WHT: 6140.4,
+        },
+        Show_Contact_Back: true,
+        Tax: -0.03,
+      },
+    },
+  },
+  {
+    title: 'ออกแบบใหม่ · ใบเสร็จรับเงิน — เงินสด (ไม่มีบัญชี)',
+    slug: 'redesign-receipt-cash',
+    data: {
+      id: 904,
+      Record: {
+        Client: {
+          Address: '45/7 ถนนพระราม 4 แขวงคลองเตย\nเขตคลองเตย กรุงเทพมหานคร 10110',
+          Name: 'ห้างหุ้นส่วนจำกัด สยามเวิร์คช็อป',
+          Tax_ID: '0103558001234',
+        },
+        Credit_Term: null,
+        Date: '2026-04-18T00:00:00.000Z',
+        Document_Type: ['Receipt'],
+        Items: [
+          {
+            Description: 'ให้คำปรึกษาการวางระบบภายในองค์กร\nงวดเดียว — เมษายน 2569',
+            Manual_Sort: 1,
+            Quantity: 1,
+            Total: 42000,
+            Unit_Price: 42000,
+            id: 1,
+          },
+        ],
+        Number: 'RE-20260400001',
+        Payment_Method: null,
+        Provider: redesignProvider,
+        Reference: { Number: 'IV-20260400001' },
+        Remarks: null,
+        Settlement: {
+          Channel: 'เงินสด',
+          Gross: 42000,
+          Net_Transfer: 40740,
+          Paid_Date: '2026-04-18T00:00:00.000Z',
+          WHT: 1260,
+        },
+        Tax: -0.03,
+      },
+    },
+  },
+  {
+    title: 'ออกแบบใหม่ · ใบเสร็จรับเงิน — พร้อมเพย์ (คนละช่องทาง บัญชีเดียวกัน)',
+    slug: 'redesign-receipt-promptpay',
+    data: {
+      id: 905,
+      Record: {
+        Client: redesignClient,
+        Credit_Term: null,
+        Date: '2026-05-22T00:00:00.000Z',
+        Document_Type: ['Receipt'],
+        Items: [
+          {
+            Description: 'ตรวจสอบและแก้ไขระบบคิวงานที่ค้างสะสม\nงานเร่งด่วน — 16 ชั่วโมง',
+            Manual_Sort: 1,
+            Quantity: 1,
+            Total: 96000,
+            Unit_Price: 96000,
+            id: 1,
+          },
+        ],
+        Number: 'RE-20260500002',
+        Payment_Method: null,
+        Provider: redesignProvider,
+        Reference: { Number: 'IV-20260500002' },
+        Remarks: null,
+        Settlement: {
+          Account_Holder: 'นาย ณัฐชนน นินยวี',
+          Account_Number: 'ออมทรัพย์ 219-8-64013-4',
+          Bank: 'ธนาคารกสิกรไทย',
+          Channel: 'พร้อมเพย์',
+          Gross: 96000,
+          Net_Transfer: 93120,
+          Paid_Date: '2026-05-22T00:00:00.000Z',
+          PromptPay: '099 286 6936',
+          WHT: 2880,
+        },
+        Show_Contact_Back: true,
+        Tax: -0.03,
+      },
+    },
+  },
+  {
+    title: 'ออกแบบใหม่ · ใบแจ้งหนี้ — สองรายการ + bullet list',
+    slug: 'redesign-invoice-long',
+    data: {
+      id: 906,
+      Record: {
+        Client: redesignClient,
+        Credit_Term: '15 วัน',
+        Date: '2026-06-12T00:00:00.000Z',
+        Document_Type: ['Invoice'],
+        Items: [
+          {
+            Description:
+              'ออกแบบสถาปัตยกรรมระบบและวางแผนการย้ายข้อมูล\nรวมเอกสารประกอบและ ADR\n\n- สำรวจระบบเดิมและจัดทำแผนผังความสัมพันธ์ของข้อมูล\n- ออกแบบสคีมาปลายทางพร้อมแผนย้อนกลับ\n- ทบทวนร่วมกับทีมภายใน 2 รอบ',
+            Manual_Sort: 1,
+            Quantity: 1,
+            Total: 180000,
+            Unit_Price: 180000,
+            id: 1,
+          },
+          {
+            Description:
+              'จัดอบรมและส่งมอบความรู้ให้ทีมภายใน\nเวิร์กช็อป 1 วันเต็ม\n\n- ขั้นตอนการทำงานกับ Git และการรีวิวโค้ด\n- การตรวจสอบระบบและการรับมือเหตุขัดข้อง',
+            Manual_Sort: 2,
+            Quantity: 1,
+            Total: 36000,
+            Unit_Price: 36000,
+            id: 2,
+          },
+        ],
+        Number: 'IV-20260600002',
+        Payment_Method: redesignBank,
+        Provider: redesignProvider,
+        Reference: { Number: 'PO-TC-2026-098' },
+        Remarks: null,
+        Tax: -0.03,
+      },
+    },
+  },
+  {
+    title: 'ออกแบบใหม่ · ใบแจ้งหนี้ — ยอดสูงสุด ฿9,999,999.99',
+    slug: 'redesign-invoice-ceiling',
+    data: {
+      id: 907,
+      Record: {
+        Client: redesignClient,
+        Credit_Term: '30 วัน',
+        Date: '2026-08-03T00:00:00.000Z',
+        Document_Type: ['Invoice'],
+        Items: [
+          {
+            Description:
+              'โครงการพัฒนาระบบหลักขององค์กร (เฟส 1)\nตามสัญญาเลขที่ TC-2026-01 · ชำระงวดเดียว',
+            Manual_Sort: 1,
+            Quantity: 1,
+            Total: 9999999.99,
+            Unit_Price: 9999999.99,
+            id: 1,
+          },
+        ],
+        Number: 'IV-20260800001',
+        Payment_Method: redesignBank,
+        Provider: redesignProvider,
+        Reference: { Number: 'PO-TC-2026-121' },
+        Remarks: null,
+        Tax: -0.03,
+      },
+    },
+  },
   {
     title: 'ใบเสร็จ VAT 7% — ไล่บั๊ก Kubernetes กลางดึก',
     slug: 'receipt-vat-k8s-bug-hunt',
