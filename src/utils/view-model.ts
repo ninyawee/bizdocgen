@@ -92,6 +92,7 @@ export function getViewModel(record: GristRecord): DocumentViewModel {
   }
 
   const total = subtotal + tax.amount
+  const wht = record.Record.WHT ?? 0
 
   // Transform payment info
   const paymentMethod = record.Record.Payment_Method
@@ -128,6 +129,8 @@ export function getViewModel(record: GristRecord): DocumentViewModel {
     subtotal,
     tax,
     total,
+    wht,
+    payable: total - wht,
     paymentInfo,
     reference,
     creditTerm,

@@ -60,6 +60,10 @@ export interface DocumentViewModel {
   subtotal: number
   tax: TaxInfo
   total: number
+  /** Withholding deducted from total; 0 when the Tax field already is the WHT. */
+  wht: number
+  /** What the client actually transfers: total - wht. */
+  payable: number
   paymentInfo: PaymentInfo
   reference: ReferenceInfo
   creditTerm: string | null

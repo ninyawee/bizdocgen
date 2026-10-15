@@ -144,3 +144,11 @@ describe('④ copy marker', () => {
     expect(getCopyLabel('?copy=1')).toBe('สำเนา')
   })
 })
+
+describe("VAT invoice that also carries WHT", () => {
+  it("adds VAT to the total and deducts WHT only from what is paid", () => {
+    const vm = getViewModel(record({ Tax: 0.07, WHT: 1200, Items: [item({ Quantity: 1, Unit_Price: 50000, Total: 50000 })] }))
+    expect(vm.total).toBeCloseTo(53500)
+    expect(vm.payable).toBeCloseTo(52300)
+  })
+})

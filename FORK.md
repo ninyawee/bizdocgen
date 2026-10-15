@@ -133,3 +133,10 @@ The sequence counts earlier rows rather than parsing their `Number` on purpose:
 reading `Number` makes two documents created in the same batch depend on each
 other, and Grist resolves that cycle by leaving both numbers blank. Caveat of the
 counting approach: deleting a document frees its number for reuse.
+
+### 5. VAT and WHT on one invoice
+
+`Tax` holds one rate: +0.07 VAT or −0.03 WHT. A VAT-registered issuer (P2D Medical Books)
+needs both, so the record also takes an optional `WHT` **amount** (computed per line in Grist,
+since WHT applies to services only). When `WHT > 0` the summary shows จำนวนเงินรวมทั้งสิ้น →
+หัก ภาษี ณ ที่จ่าย → ยอดชำระสุทธิ, and the PromptPay QR uses the payable amount.

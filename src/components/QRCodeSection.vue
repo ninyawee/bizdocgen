@@ -2,7 +2,7 @@
   <div v-if="showQR" class="bd-qr">
     <img v-if="qrCodeUrl" :src="qrCodeUrl" alt="PromptPay QR" class="bd-qr-img" />
     <div v-else class="bd-qr-img" />
-    <div class="bd-qr-amt bd-num">฿{{ formatNumber(viewModel.total) }}</div>
+    <div class="bd-qr-amt bd-num">฿{{ formatNumber(viewModel.payable) }}</div>
     <div class="bd-qr-cap">สแกนจ่ายพร้อมเพย์ · ยอดสุทธิ</div>
   </div>
 </template>
@@ -32,7 +32,7 @@ const generateQRCode = async () => {
   qrCodeUrl.value = null
   if (showQR.value && promptPayId.value) {
     try {
-      qrCodeUrl.value = await generatePromptPayQR(promptPayId.value, viewModel.value.total)
+      qrCodeUrl.value = await generatePromptPayQR(promptPayId.value, viewModel.value.payable)
     } catch (error) {
       console.error('Failed to generate QR code:', error)
     }
@@ -42,7 +42,7 @@ const generateQRCode = async () => {
 onMounted(generateQRCode)
 
 watch(
-  () => [promptPayId.value, viewModel.value.total],
+  () => [promptPayId.value, viewModel.value.payable],
   () => {
     generateQRCode()
   },

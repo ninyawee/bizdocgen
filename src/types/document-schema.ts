@@ -100,6 +100,7 @@ export const RecordDataSchema = z.object({
   Settlement: SettlementSchema, // ① receipts only
   Show_Contact_Back: z.boolean().nullish(), // ⑨ ติดต่อกลับที่
   Tax: z.number(),
+  WHT: z.number().nullish(), // withholding amount, deducted after Tax (VAT invoices that also carry WHT)
   Signed_Document_URL: z.union([z.url(), z.literal('')]).nullish(),
   Actions_Data: ActionsDataSchema.optional(),
 })

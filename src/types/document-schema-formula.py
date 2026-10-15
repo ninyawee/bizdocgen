@@ -92,6 +92,8 @@ def serialize_record(doc):
         "Show_Contact_Back": bool(getattr(doc, "Show_Contact_Back", False)),  # (9)
         "Signed_Document_URL": doc.Signed_Document_URL or None,
         "Tax": doc.Tax,
+        # Partial WHT (labour only); Tax stays 0 when this is set.
+        "WHT": getattr(doc, "WHT", None) or None,
     }
 
 return serialize_record(rec)
